@@ -1,0 +1,1 @@
+"""CodeMate application services."""

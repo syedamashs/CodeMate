@@ -1,0 +1,38 @@
+# Code-Mate Repository Description
+
+**Code-Mate** is a Flask-based LLM-powered code analysis and evaluation platform for Assignment 1 (22ITRM0). 
+
+## 🎯 Purpose
+Analyze code snippets using Large Language Models (LLMs), provide bug explanations, and suggest fixes with support for multiple model providers and datasets.
+
+## ✨ Key Features
+- **Multi-Provider Support**: DEMO, API-based (OpenAI), and Local (Hugging Face) models
+- **Few-Shot Prompting**: Structured prompt generation for accurate analysis
+- **Dataset Integration**: CodeSearchNet, HumanEval, MBPP
+- **Safe Evaluation**: Controlled evaluation harness without code execution
+- **RESTful API**: Clean endpoints for code analysis and evaluation
+- **Web Dashboard**: User-friendly interface for code analysis
+
+## 🏗️ Architecture
+- **Modular Design**: Services for models, prompts, parsing, and datasets
+- **Professional Structure**: PEP 517/518 compliant Python package
+- **Well-Tested**: Comprehensive test suite with pytest
+- **Production-Ready**: CI/CD ready with GitHub Actions
+
+## 📊 Tech Stack
+- **Framework**: Flask 3.0+
+- **ML/NLP**: Transformers, Torch
+- **Data**: Datasets, PyArrow
+- **Testing**: Pytest
+- **Configuration**: Python-dotenv, pyproject.toml
+
+## 🚀 Quick Start
+```powershell
+python run.py
+```
+
+## 📄 License
+See LICENSE file for details.
+
+## 👥 Team
+Mohanalingam M | Praveen M | Syed Amash S

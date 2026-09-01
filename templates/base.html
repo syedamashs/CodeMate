@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}CodeMate{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <aside class="sidebar">
+    <a class="brand" href="/"><span class="brand-mark">C</span><span>CodeMate</span></a>
+    <p class="eyebrow">LLM PROJECT / TEAM 01</p>
+    <nav>
+      <a class="nav-link" href="/"><span>01</span> Analyze</a>
+      <a class="nav-link" href="/evaluate"><span>02</span> Evaluation</a>
+      <a class="nav-link" href="/datasets"><span>03</span> Datasets</a>
+      <a class="nav-link" href="/about"><span>04</span> Project info</a>
+    </nav>
+    <div class="sidebar-foot"><span class="status-dot"></span><span>{{ mode|upper }} MODE</span><small>22ITRM0 / ASSIGNMENT 01</small></div>
+  </aside>
+  <main class="main-content">
+    <header class="topbar"><span class="mobile-brand">CodeMate</span><span class="topbar-label">CODE INTELLIGENCE WORKBENCH</span><span class="topbar-course">22ITRM0</span></header>
+    {% block content %}{% endblock %}
+  </main>
+  <div id="toast" class="toast" role="status"></div>
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

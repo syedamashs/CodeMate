@@ -1,0 +1,2 @@
+# Code-Mate
+LLM-powered code analysis and evaluation platform with multi-provider support (OpenAI, Local, Demo) and comprehensive dataset integration (CodeSearchNet, HumanEval, MBPP). Features REST API, web dashboard, and safe evaluation harness.
