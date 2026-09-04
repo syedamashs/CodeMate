@@ -22,7 +22,7 @@ Code-Mate/
 │       │   └── evaluator.py
 │       └── utils/             # Utility functions
 ├── tests/                     # Test suite
-├── datasets/                  # Data files
+├── datasets/                  # Evaluation datasets
 ├── static/                    # Frontend assets
 ├── templates/                 # HTML templates
 ├── docs/                      # Documentation
@@ -62,8 +62,7 @@ Copy-Item .env.example .env
 ### Running the Application
 
 ```powershell
-cd src
-python -m codemate.app
+python app.py
 ```
 
 Open http://127.0.0.1:5000 in your browser.

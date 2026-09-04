@@ -28,7 +28,7 @@ Analyze code snippets using Large Language Models (LLMs), provide bug explanatio
 
 ## 🚀 Quick Start
 ```powershell
-python run.py
+python app.py
 ```
 
 ## 📄 License
