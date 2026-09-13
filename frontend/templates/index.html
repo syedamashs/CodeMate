@@ -1,0 +1,51 @@
+{% extends 'base.html' %}{% block title %}Analyze | CodeMate{% endblock %}{% block content %}
+<section class="page-head"><div><p class="kicker">ANALYSIS LAB</p><h1>Understand the code.<br><em>Fix what matters.</em></h1><p class="lede">A structured code review workflow powered by a code-capable language model.</p></div><div class="mode-badge"><span class="status-dot"></span>{{ mode|upper }} MODE</div></section>
+<div class="workspace-grid">
+  <section class="panel input-panel"><div class="panel-head"><div><span class="panel-index">01</span><h2>Code input</h2></div><button class="text-button" id="clear-btn">Clear</button></div>
+    <div class="field-row"><label for="language">Language</label><select id="language"><option>Python</option><option>JavaScript</option><option>Java</option><option>C++</option><option>C</option></select></div>
+    <label for="code">Source code</label><textarea id="code" spellcheck="false" placeholder="Paste a function or program here..."></textarea>
+    <label for="error-message">Error message <span class="muted">optional</span></label><textarea id="error-message" class="error-input" spellcheck="false" placeholder="Paste a traceback or compiler message..."></textarea>
+    <div class="action-row"><button class="primary-button" id="analyze-btn"><span>Analyze code</span><span class="arrow">→</span></button></div>
+  </section>
+  <section class="result-column"><div class="result-header"><div><span class="panel-index">02</span><h2>Analysis result</h2></div><span id="result-state" class="result-state">Waiting for input</span></div>
+    <div id="loading" class="loading-state" hidden><span class="spinner"></span> Reading your code...</div>
+    <div id="empty-result" class="empty-result"><div class="empty-symbol">↗</div><h3>Your review appears here</h3><p>Paste code on the left and click Analyze code to begin.</p></div>
+    <div id="result-content" hidden>
+      <div class="bug-banner">
+        <div class="bug-banner-left">
+          <span class="bug-label">BUG TYPE</span>
+          <strong id="bug-type">—</strong>
+        </div>
+        <span class="severity-badge" id="severity-badge">CRITICAL</span>
+      </div>
+      <div class="result-card"><span>DETECTED ISSUE</span><p id="detected-issue"></p></div>
+      <div class="result-card"><span>EXPLANATION</span><p id="explanation"></p></div>
+      <div class="result-card"><span>SUGGESTED FIX</span><p id="suggested-fix"></p></div>
+      <div class="result-card code-result">
+        <div class="code-toolbar">
+          <div class="code-tabs">
+            <button type="button" class="tab-btn active" id="tab-code-btn">Corrected Code</button>
+            <button type="button" class="tab-btn" id="tab-diff-btn">Visual Diff</button>
+          </div>
+          <div class="code-actions">
+            <button type="button" id="copy-btn" class="action-btn">Copy</button>
+            <button type="button" id="download-btn" class="action-btn">Download</button>
+            <button type="button" id="export-report-btn" class="action-btn">Export Report</button>
+          </div>
+        </div>
+        <div id="code-view-container">
+          <pre class="line-numbers"><code id="corrected-code" class="language-python"></code></pre>
+        </div>
+        <div id="diff-view-container" hidden>
+          <div class="diff-header">
+            <span class="diff-legend del">- Original (Issues Detected)</span>
+            <span class="diff-legend add">+ Corrected (Safe Version)</span>
+          </div>
+          <div id="diff-content" class="diff-table"></div>
+        </div>
+        <p class="reason" id="reason"></p>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}

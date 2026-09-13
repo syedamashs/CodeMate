@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block title %}Project Info | CodeMate{% endblock %}
+{% block content %}
+<section class="page-head compact">
+  <div>
+    <p class="kicker">PROJECT OVERVIEW</p>
+    <h1>CodeMate is a<br><em>reasoning surface.</em></h1>
+    <p class="lede">A modern code intelligence workbench for making structured LLM code review visible, testable, and reliable.</p>
+  </div>
+</section>
+
+<div class="about-grid">
+  <section class="panel about-panel">
+    <span class="panel-index">01 / OVERVIEW</span>
+    <h2>Product Vision</h2>
+    <p>CodeMate accepts source code and optional compiler/runtime messages, orchestrating local or cloud LLMs to detect bugs, explain root causes, and provide verified safe fixes.</p>
+    
+    <h2>Core Architecture</h2>
+    <p>Designed with a modular provider pipeline supporting local Ollama models (such as Qwen 2.5 Coder) and cloud inference. Features visual side-by-side diffing, defect severity classification, and instant Markdown report generation.</p>
+  </section>
+
+  <section class="panel about-panel">
+    <span class="panel-index">02 / CONTRIBUTORS</span>
+    <h2>Core Engineering Team</h2>
+    <p>Architecture & Development</p>
+    <ul>
+      <li>Mohanalingam M</li>
+      <li>Praveen M</li>
+      <li>Syed Amash S</li>
+    </ul>
+    
+    <h2>Analysis Pipeline</h2>
+    <div class="pipeline">Source Input → Prompt Engineering → Ollama LLM → JSON Parser → Visual Diff & Report</div>
+  </section>
+</div>
+{% endblock %}
+

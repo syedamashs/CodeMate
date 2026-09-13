@@ -1,45 +1,47 @@
-# CodeMate - Code Analysis and Evaluation Tool
+# CodeMate - AI Code Intelligence & Automated Review Workbench
 
-CodeMate is a Flask web application for Assignment 1, 22ITRM0 (Large Language Models). It accepts code and an optional error message, builds a structured few-shot prompt, calls a replaceable model provider, parses the response, and presents a bug explanation and corrected code.
+CodeMate is a modern web application for intelligent source code analysis and automated debugging. Powered by local Ollama language models (e.g. `qwen2.5-coder:1.5b`), it inspects code for syntax errors, runtime risks, and logical flaws, explains root causes, produces line-by-line visual diffs, and provides one-click export reports.
 
 ## 📁 Project Structure
 
 ```
 Code-Mate/
-├── src/
-│   └── codemate/              # Main Python package
-│       ├── __init__.py
-│       ├── app.py             # Flask application factory
-│       ├── config.py          # Configuration management
-│       ├── services/          # Business logic and providers
-│       │   ├── __init__.py
-│       │   ├── dataset_service.py
-│       │   ├── model_service.py
-│       │   ├── prompt_service.py
-│       │   └── response_parser.py
-│       ├── evaluation/        # Evaluation harness
-│       │   ├── __init__.py
-│       │   └── evaluator.py
-│       └── utils/             # Utility functions
-├── tests/                     # Test suite
-├── datasets/                  # Evaluation datasets
-├── static/                    # Frontend assets
-├── templates/                 # HTML templates
-├── docs/                      # Documentation
-├── .github/workflows/         # CI/CD workflows
-├── requirements.txt
-├── pyproject.toml
-├── pytest.ini
-├── .env.example
-└── README.md
+├── backend/                   # Flask backend service
+│   ├── app.py                 # Application factory & API endpoints
+│   ├── config.py              # Environment configuration loader
+│   ├── model_service.py       # Ollama, OpenAI-compatible & Demo providers
+│   ├── prompt_service.py      # Structured prompting engine
+│   └── response_parser.py     # Resilient JSON parser & severity analyzer
+├── frontend/                  # Modern UI & workbench
+│   ├── static/
+│   │   ├── css/style.css      # Custom dark/warm design tokens & layout
+│   │   └── js/app.js          # Diff computation, Prism highlighting, console logging
+│   └── templates/
+│       ├── base.html          # Base layout & sidebar navigation
+│       ├── index.html         # Code analysis lab & visual diff workbench
+│       └── about.html         # Architecture overview & team information
+├── tests/                     # Fast automated pytest suite
+│   ├── pytest.ini             # Pytest configuration
+│   ├── test_app.py            # API integration tests
+│   ├── test_parser.py         # Parser & JSON recovery tests
+│   └── test_prompt.py         # Prompt engineering tests
+├── TESTCASES.md               # Ready-to-use testing catalog (12 test cases)
+├── app.py                     # Root entry point
+├── requirements.txt           # Python dependencies
+└── .env                       # Environment configuration
 ```
 
 ## 🚀 Quick Start
 
-### Installation
-
+### 1. Prerequisites & Ollama Model
+Install [Ollama](https://ollama.com/) and pull a code-specialized model:
 ```powershell
-# Create virtual environment
+ollama pull qwen2.5-coder:1.5b
+```
+
+### 2. Installation
+```powershell
+# Create & activate virtual environment (optional)
 python -m venv venv
 venv\Scripts\activate
 
@@ -47,58 +49,45 @@ venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### Configuration
-
-```powershell
-# Create .env from example
-Copy-Item .env.example .env
-
-# Edit .env for your configuration:
-# - DEMO mode (default): works without API key
-# - API mode: set MODEL_PROVIDER=api, MODEL_NAME, API_KEY
-# - Local mode: set MODEL_PROVIDER=local and MODEL_NAME
+### 3. Configuration
+Set up your `.env` file:
+```ini
+MODEL_PROVIDER=ollama
+MODEL_NAME=qwen2.5-coder:1.5b
+OLLAMA_BASE_URL=http://127.0.0.1:11434
+MODEL_TIMEOUT=120
 ```
 
-### Running the Application
-
+### 4. Running the Application
 ```powershell
 python app.py
 ```
+Open **http://127.0.0.1:5000** in your browser.
 
-Open http://127.0.0.1:5000 in your browser.
+---
 
 ## 🧪 Testing
 
+Run the automated test suite:
 ```powershell
-python -m pytest -q
-python -m pytest --cov=src/codemate
+python -m pytest tests/
 ```
+All tests run in isolated demo mode and pass in ~0.15s.
 
-## 📊 Datasets
+---
 
-- **CodeSearchNet**: Arrow shards under `datasets/codesearchnet/`
-- **HumanEval**: `datasets/humaneval/human-eval-master/data/HumanEval.jsonl.gz`
-- **MBPP**: Loaded via `datasets.load_dataset("mbpp")`, capped by `MBPP_SAMPLE_SIZE`
+## ✨ Features
+- **Local AI Inference:** Zero external cloud data leakage using local Ollama.
+- **Side-by-Side Visual Diff:** Dynamic LCS-based diff viewer highlighting line additions and deletions.
+- **Syntax Highlighting & Line Numbers:** Multi-language highlighting via Prism.js.
+- **Defect Severity Tagging:** Automatic classification (Critical, High, Medium, Low/Clean).
+- **Dual Console Reporting:** Terminal stdout reports and Browser DevTools (F12) formatted logs.
+- **One-Click Export:** Download corrected source code or complete Markdown review reports.
 
-Dataset loading is informational and controlled. The application never executes user or model-generated code.
+---
 
-## 🔧 Configuration
+## 👥 Engineering Team
+- Mohanalingam M
+- Praveen M
+- Syed Amash S
 
-Set environment variables in `.env` (see `.env.example` for all options):
-
-| Variable | Default | Purpose |
-|----------|---------|---------|
-| `MODEL_PROVIDER` | `demo` | Model provider: `demo`, `api`, or `local` |
-| `MODEL_NAME` | `gpt-4o-mini` | Model identifier |
-| `API_KEY` | `` | API key for remote models |
-| `MAX_CODE_LENGTH` | `12000` | Max input code length (chars) |
-| `MODEL_TIMEOUT` | `60` | Response timeout (seconds) |
-
-## 📖 Documentation
-
-- [API Reference](docs/API.md)
-- [Contributing Guide](docs/CONTRIBUTING.md)
-
-## 👥 Team
-
-Mohanalingam M, Praveen M, Syed Amash S
