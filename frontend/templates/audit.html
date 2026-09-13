@@ -1,0 +1,136 @@
+{% extends 'base.html' %}
+{% block title %}Code Health & Security Audit | CodeMate{% endblock %}
+
+{% block content %}
+<section class="page-head">
+  <div>
+    <p class="kicker">PERFORMANCE & SECURITY AUDIT</p>
+    <h1>Algorithmic health.<br><em>Zero vulnerabilities.</em></h1>
+    <p class="lede">Deep static and computational analysis: Big-O time and space complexity, OWASP security risk detection, and code maintainability.</p>
+  </div>
+  <div class="mode-badge"><span class="status-dot"></span>{{ mode|upper }} MODE</div>
+</section>
+
+<div class="workspace-grid">
+  <!-- Left Panel: Input -->
+  <section class="panel input-panel">
+    <div class="panel-head">
+      <div><span class="panel-index">01</span><h2>Source code</h2></div>
+      <button class="text-button" id="audit-clear-btn" type="button">Clear</button>
+    </div>
+    
+    <div class="field-row">
+      <label for="audit-language">Language</label>
+      <select id="audit-language">
+        <option>Python</option>
+        <option>JavaScript</option>
+        <option>Java</option>
+        <option>C++</option>
+        <option>C</option>
+      </select>
+    </div>
+
+    <label for="audit-code">Source code to audit</label>
+    <textarea id="audit-code" spellcheck="false" placeholder="Paste an algorithm or function to audit for complexity and security..."></textarea>
+
+    <div class="action-row">
+      <button class="primary-button" id="run-audit-btn" type="button">
+        <span>Run Code Audit</span>
+        <span class="arrow">→</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- Right Panel: Audit Report -->
+  <section class="result-column">
+    <div class="result-header">
+      <div><span class="panel-index">02</span><h2>Audit Report</h2></div>
+      <span id="audit-result-state" class="result-state">Waiting for input</span>
+    </div>
+
+    <div id="audit-loading" class="loading-state" hidden>
+      <span class="spinner"></span> Auditing algorithmic complexity & security risks...
+    </div>
+
+    <div id="audit-empty-result" class="empty-result">
+      <div class="empty-symbol">⚡</div>
+      <h3>Code health audit appears here</h3>
+      <p>Paste code on the left and click <strong>Run Code Audit</strong> to inspect Big-O complexity, security, and quality.</p>
+    </div>
+
+    <div id="audit-result-content" hidden>
+      <!-- Top Metrics Row -->
+      <div class="audit-metrics-bar">
+        <div class="audit-metric-box">
+          <span class="metric-mini-label">HEALTH SCORE</span>
+          <div class="score-display">
+            <strong id="audit-health-score" class="score-number">90</strong>
+            <span class="score-total">/100</span>
+          </div>
+          <span id="audit-health-badge" class="health-badge health-excellent">EXCELLENT</span>
+        </div>
+
+        <div class="audit-metric-box">
+          <span class="metric-mini-label">COMPLEXITY</span>
+          <div class="complexity-pills">
+            <div class="pill-group">
+              <span class="pill-title">Time</span>
+              <span id="audit-time-complexity" class="complexity-pill pill-time">O(N)</span>
+            </div>
+            <div class="pill-group">
+              <span class="pill-title">Space</span>
+              <span id="audit-space-complexity" class="complexity-pill pill-space">O(1)</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="audit-metric-box">
+          <span class="metric-mini-label">SECURITY</span>
+          <div class="security-indicator">
+            <span id="audit-security-badge" class="security-status-badge status-safe">SAFE</span>
+          </div>
+          <small id="audit-security-summary">No vulnerabilities detected</small>
+        </div>
+      </div>
+
+      <!-- Algorithmic Complexity Explanation -->
+      <div class="result-card">
+        <span>COMPLEXITY RATIONALE</span>
+        <p id="audit-complexity-exp"></p>
+      </div>
+
+      <!-- Security Findings -->
+      <div class="result-card">
+        <span>SECURITY & OWASP AUDIT</span>
+        <ul id="audit-security-list" class="audit-findings-list"></ul>
+      </div>
+
+      <!-- Code Smells -->
+      <div class="result-card">
+        <span>CODE SMELLS & QUALITY</span>
+        <ul id="audit-smells-list" class="audit-findings-list"></ul>
+      </div>
+
+      <!-- Optimization Tips -->
+      <div class="result-card">
+        <span>OPTIMIZATION RECOMMENDATIONS</span>
+        <ul id="audit-tips-list" class="audit-findings-list tips-list"></ul>
+      </div>
+
+      <!-- Optimized Refactored Code -->
+      <div class="result-card code-result">
+        <div class="code-toolbar">
+          <div class="code-tabs">
+            <span class="code-tab-title">Optimized & Refactored Implementation</span>
+          </div>
+          <div class="code-actions">
+            <button type="button" id="audit-copy-btn" class="action-btn">Copy</button>
+            <button type="button" id="audit-download-btn" class="action-btn">Download</button>
+          </div>
+        </div>
+        <pre class="line-numbers"><code id="audit-optimized-code" class="language-python"></code></pre>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}

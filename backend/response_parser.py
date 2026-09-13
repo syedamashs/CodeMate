@@ -85,3 +85,75 @@ def parse_response(raw_response: str) -> dict[str, str]:
     result["severity"] = sev["level"]
     result["severity_class"] = sev["class"]
     return result
+
+
+def compute_health_badge(score: int) -> dict[str, str]:
+    if score >= 90:
+        return {"label": "Excellent", "class": "health-excellent"}
+    if score >= 75:
+        return {"label": "Good", "class": "health-good"}
+    if score >= 50:
+        return {"label": "Fair", "class": "health-fair"}
+    return {"label": "Needs Refactoring", "class": "health-poor"}
+
+
+def parse_audit_response(raw_response: str) -> dict[str, Any]:
+    text = str(raw_response or "").strip()
+    candidates = [text]
+    fenced = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", text, re.DOTALL | re.IGNORECASE)
+    if fenced:
+        candidates.insert(0, fenced.group(1))
+    json_match = re.search(r"\{.*\}", text, re.DOTALL)
+    if json_match:
+        candidates.insert(0, json_match.group(0))
+
+    parsed_dict: dict[str, Any] = {}
+    for candidate in candidates:
+        try:
+            val = json.loads(candidate)
+            if isinstance(val, dict):
+                parsed_dict = val.get("response") if isinstance(val.get("response"), dict) else (val.get("result") if isinstance(val.get("result"), dict) else val)
+                break
+        except json.JSONDecodeError:
+            continue
+
+    raw_score = parsed_dict.get("health_score", 80)
+    try:
+        found_num = re.search(r"\d+", str(raw_score))
+        health_score = int(found_num.group(0)) if found_num else 80
+        health_score = max(0, min(100, health_score))
+    except Exception:
+        health_score = 80
+
+    badge = compute_health_badge(health_score)
+
+    def _to_list(v: Any) -> list[str]:
+        if isinstance(v, list):
+            return [str(x).strip() for x in v if str(x).strip()]
+        if isinstance(v, str) and v.strip():
+            lines = [re.sub(r"^[-*•\d.]+\s*", "", l).strip() for l in v.splitlines() if l.strip()]
+            return [l for l in lines if l]
+        return []
+
+    sec_status = str(parsed_dict.get("security_status") or "Safe").strip().capitalize()
+    if sec_status not in {"Safe", "Warning", "Vulnerable"}:
+        sec_status = "Safe"
+
+    sec_findings = _to_list(parsed_dict.get("security_findings"))
+    if not sec_findings and sec_status != "Safe":
+        sec_findings = ["Potential input validation or resource leakage risk."]
+
+    return {
+        "health_score": health_score,
+        "health_label": badge["label"],
+        "health_class": badge["class"],
+        "time_complexity": str(parsed_dict.get("time_complexity") or "O(N)").strip(),
+        "space_complexity": str(parsed_dict.get("space_complexity") or "O(1)").strip(),
+        "complexity_explanation": str(parsed_dict.get("complexity_explanation") or "Standard algorithmic execution.").strip(),
+        "security_status": sec_status,
+        "security_findings": sec_findings,
+        "code_smells": _to_list(parsed_dict.get("code_smells")),
+        "optimization_tips": _to_list(parsed_dict.get("optimization_tips")),
+        "optimized_code": clean_code(parsed_dict.get("optimized_code", ""))
+    }
+

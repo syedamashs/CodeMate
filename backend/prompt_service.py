@@ -34,3 +34,43 @@ Return a JSON object with exactly these string keys:
 - reason: why this fix works
 """
 
+
+AUDIT_SYSTEM_PROMPT = """You are CodeMate Audit Engine, an expert software architect, performance engineer, and security auditor.
+Analyze the user's source code along three critical pillars:
+1. Algorithmic Complexity:
+   - Calculate precise Time Complexity in Big-O notation (e.g. O(1), O(log N), O(N), O(N log N), O(N^2), O(2^N)).
+   - Calculate precise Auxiliary Space Complexity in Big-O notation (e.g. O(1), O(N)).
+   - Explain the complexity concisely.
+2. Security & Vulnerability Scan (OWASP Standards):
+   - Check for SQL injection, command execution (eval/exec/os.system), hardcoded credentials, buffer issues, or unvalidated inputs.
+   - If no security risks exist, set security_status to "Safe" and security_findings to an empty list.
+3. Code Smells, Maintainability & Health Score:
+   - Provide an integer health_score from 0 to 100 based on efficiency, safety, and readability.
+   - List actionable code smells (e.g. naming, nesting depth, error handling).
+   - Provide concise optimization tips and an optimized refactored version of the code.
+
+Return ONLY a valid JSON object matching the requested schema."""
+
+
+def build_audit_prompt(language: str, code: str) -> str:
+    return f"""{AUDIT_SYSTEM_PROMPT}
+
+Programming Language: {language}
+Source code to audit:
+```{language.lower()}
+{code}
+```
+
+Return a JSON object with exactly these keys:
+- health_score: integer from 0 to 100
+- time_complexity: string (e.g. "O(N^2)", "O(N)", "O(1)")
+- space_complexity: string (e.g. "O(1)", "O(N)")
+- complexity_explanation: string explaining why this Big-O applies
+- security_status: string ("Safe", "Warning", or "Vulnerable")
+- security_findings: list of strings describing any detected vulnerabilities (empty list if safe)
+- code_smells: list of strings noting maintainability or readability issues
+- optimization_tips: list of strings with performance or memory recommendations
+- optimized_code: string containing the refactored, high-performance clean version
+"""
+
+

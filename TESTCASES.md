@@ -189,3 +189,72 @@ def is_palindrome(text: str) -> bool:
 
 print(is_palindrome("A man, a plan, a canal: Panama"))
 ```
+
+---
+
+## ⚡ Code Health & Security Audit Test Cases (`/audit`)
+
+### 13. Quadratic Brute Force: Two Sum ($O(N^2)$ Complexity)
+* **Navigate to:** `http://127.0.0.1:5000/audit`
+* **Language:** `Python`
+* **Expected Result:**
+  - **Time Complexity:** $O(N^2)$
+  - **Space Complexity:** $O(1)$
+  - **Optimization Tip:** Suggests a hash map to reduce time complexity to $O(N)$.
+```python
+def two_sum_brute_force(nums, target):
+    n = len(nums)
+    for i in range(n):
+        for j in range(i + 1, n):
+            if nums[i] + nums[j] == target:
+                return [i, j]
+    return []
+```
+
+---
+
+### 14. Security Vulnerability: SQL Injection & Hardcoded Credential
+* **Navigate to:** `http://127.0.0.1:5000/audit`
+* **Language:** `Python`
+* **Expected Result:**
+  - **Security Status:** `VULNERABLE` (or `WARNING`)
+  - **Findings:** Flags raw string concatenation in SQL and hardcoded secret.
+```python
+import sqlite3
+
+API_KEY = "sk_live_99882233aabbccdd"
+
+def get_user_profile(username):
+    conn = sqlite3.connect("users.db")
+    cursor = conn.cursor()
+    # Flaw: String formatting introduces SQL Injection risk
+    query = "SELECT * FROM users WHERE username = '" + username + "'"
+    cursor.execute(query)
+    return cursor.fetchone()
+```
+
+---
+
+### 15. Optimal Algorithm: Binary Search ($O(\log N)$ & Safe)
+* **Navigate to:** `http://127.0.0.1:5000/audit`
+* **Language:** `Python`
+* **Expected Result:**
+  - **Health Score:** 90–100 (`EXCELLENT`)
+  - **Time Complexity:** $O(\log N)$
+  - **Space Complexity:** $O(1)$
+  - **Security Status:** `SAFE`
+```python
+def binary_search(arr, target):
+    low = 0
+    high = len(arr) - 1
+    while low <= high:
+        mid = (low + high) // 2
+        if arr[mid] == target:
+            return mid
+        elif arr[mid] < target:
+            low = mid + 1
+        else:
+            high = mid - 1
+    return -1
+```
+

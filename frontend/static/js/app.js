@@ -315,36 +315,181 @@ if ($('analyze-btn')) {
   $('export-report-btn')?.addEventListener('click', exportReport);
 }
 
-// Benchmark Evaluate button listener
-if ($('evaluate-btn')) {
-  $('evaluate-btn').addEventListener('click', async () => {
-    const button = $('evaluate-btn');
-    button.disabled = true;
-    try {
-      const response = await fetch('/api/evaluate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          dataset: $('dataset')?.value || 'MBPP',
-          samples: $('samples')?.value || 10
-        })
-      });
-      const data = await response.json();
-      if ($('evaluation-result')) $('evaluation-result').textContent = data.message;
-      for (const [id, key] of [
-        ['metric-samples', 'samples_evaluated'],
-        ['metric-success', 'successful_responses'],
-        ['metric-bug', 'bug_detection'],
-        ['metric-fix', 'fix_success'],
-        ['metric-latency', 'average_latency']
-      ]) {
-        const el = $(id);
-        if (el) el.textContent = data[key] ?? 'N/A';
+/* ========================================================
+   Code Health & Security Audit Handler
+   ======================================================== */
+async function runAudit() {
+  const code = $('audit-code')?.value || '';
+  const lang = $('audit-language')?.value || 'Python';
+
+  if (!code.trim()) {
+    toast('Enter code to audit.');
+    return;
+  }
+
+  if ($('audit-empty-result')) $('audit-empty-result').hidden = true;
+  if ($('audit-result-content')) $('audit-result-content').hidden = true;
+  if ($('audit-loading')) $('audit-loading').hidden = false;
+  if ($('run-audit-btn')) $('run-audit-btn').disabled = true;
+  if ($('audit-result-state')) $('audit-result-state').textContent = 'Auditing...';
+
+  try {
+    const response = await fetch('/api/audit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code, language: lang })
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error || 'Audit request failed.');
+    }
+
+    const res = data.result || {};
+
+    // 1. Health Score
+    const scoreEl = $('audit-health-score');
+    if (scoreEl) scoreEl.textContent = res.health_score ?? 'N/A';
+
+    const healthBadge = $('audit-health-badge');
+    if (healthBadge) {
+      healthBadge.textContent = res.health_label || 'Good';
+      healthBadge.className = `health-badge ${res.health_class || 'health-good'}`;
+    }
+
+    // 2. Complexity Pills
+    const timeEl = $('audit-time-complexity');
+    if (timeEl) timeEl.textContent = res.time_complexity || 'O(N)';
+
+    const spaceEl = $('audit-space-complexity');
+    if (spaceEl) spaceEl.textContent = res.space_complexity || 'O(1)';
+
+    // 3. Security Status
+    const secBadge = $('audit-security-badge');
+    const secStatus = (res.security_status || 'Safe').toUpperCase();
+    if (secBadge) {
+      secBadge.textContent = secStatus;
+      secBadge.className = `security-status-badge status-${secStatus.toLowerCase()}`;
+    }
+
+    const secSummary = $('audit-security-summary');
+    if (secSummary) {
+      const count = (res.security_findings || []).length;
+      secSummary.textContent = count === 0 ? 'No vulnerabilities detected' : `${count} issue(s) identified`;
+    }
+
+    // 4. Complexity Explanation
+    const compExp = $('audit-complexity-exp');
+    if (compExp) compExp.textContent = res.complexity_explanation || 'Standard runtime performance.';
+
+    // 5. Populate Lists (Security, Smells, Tips)
+    const populateList = (id, items, emptyText) => {
+      const ul = $(id);
+      if (!ul) return;
+      ul.innerHTML = '';
+      if (!items || items.length === 0) {
+        const li = document.createElement('li');
+        li.textContent = emptyText;
+        ul.appendChild(li);
+      } else {
+        items.forEach(item => {
+          const li = document.createElement('li');
+          li.textContent = item;
+          ul.appendChild(li);
+        });
       }
-    } catch (error) {
-      toast(error.message);
-    } finally {
-      button.disabled = false;
+    };
+
+    populateList('audit-security-list', res.security_findings, 'No vulnerabilities or injection risks detected.');
+    populateList('audit-smells-list', res.code_smells, 'Code adheres to readability and structure standards.');
+    populateList('audit-tips-list', res.optimization_tips, 'Operating at optimal algorithmic efficiency.');
+
+    // 6. Optimized Code & Prism Highlighting
+    const optCodeEl = $('audit-optimized-code');
+    if (optCodeEl) {
+      optCodeEl.textContent = res.optimized_code || code;
+      const langInfo = languageMap[lang] || { prism: 'python' };
+      optCodeEl.className = `language-${langInfo.prism}`;
+      if (window.Prism) {
+        Prism.highlightElement(optCodeEl);
+      }
+    }
+
+    // 7. DevTools (F12) Console Log
+    console.log(
+      "%c=================================================================\n" +
+      "               CODEMATE HEALTH & SECURITY AUDIT\n" +
+      "=================================================================\n" +
+      `Mode             : ${data.mode.toUpperCase()}\n` +
+      `Language         : ${lang}\n` +
+      `Latency          : ${data.latency}s\n` +
+      `Health Score     : ${res.health_score}/100 (${res.health_label})\n` +
+      `Time Complexity  : ${res.time_complexity}\n` +
+      `Space Complexity : ${res.space_complexity}\n` +
+      `Security Status  : ${res.security_status}\n` +
+      "-----------------------------------------------------------------\n" +
+      `[COMPLEXITY RATIONALE]:\n${res.complexity_explanation}\n` +
+      "-----------------------------------------------------------------\n" +
+      `[SECURITY FINDINGS]:\n${(res.security_findings || []).join('\n') || 'None'}\n` +
+      "-----------------------------------------------------------------\n" +
+      `[CODE SMELLS]:\n${(res.code_smells || []).join('\n') || 'None'}\n` +
+      "-----------------------------------------------------------------\n" +
+      `[OPTIMIZATION TIPS]:\n${(res.optimization_tips || []).join('\n') || 'None'}\n` +
+      "=================================================================",
+      "color: #0369a1; font-weight: bold; font-family: monospace;"
+    );
+
+    if ($('audit-result-content')) $('audit-result-content').hidden = false;
+    if ($('audit-result-state')) $('audit-result-state').textContent = `${data.mode.toUpperCase()} · ${data.latency}s`;
+
+  } catch (error) {
+    toast(error.message);
+    if ($('audit-empty-result')) $('audit-empty-result').hidden = false;
+    if ($('audit-result-state')) $('audit-result-state').textContent = 'Unable to complete audit';
+  } finally {
+    if ($('audit-loading')) $('audit-loading').hidden = true;
+    if ($('run-audit-btn')) $('run-audit-btn').disabled = false;
+  }
+}
+
+// Audit Event Listeners
+if ($('run-audit-btn')) {
+  $('run-audit-btn').addEventListener('click', runAudit);
+
+  $('audit-clear-btn')?.addEventListener('click', () => {
+    $('audit-code').value = '';
+    if ($('audit-empty-result')) $('audit-empty-result').hidden = false;
+    if ($('audit-result-content')) $('audit-result-content').hidden = true;
+    if ($('audit-result-state')) $('audit-result-state').textContent = 'Waiting for input';
+  });
+
+  $('audit-copy-btn')?.addEventListener('click', async () => {
+    const code = $('audit-optimized-code')?.textContent || '';
+    if (code) {
+      await navigator.clipboard.writeText(code);
+      toast('Optimized code copied');
     }
   });
+
+  $('audit-download-btn')?.addEventListener('click', () => {
+    const code = $('audit-optimized-code')?.textContent || '';
+    if (!code.trim()) {
+      toast('No optimized code to download.');
+      return;
+    }
+    const lang = $('audit-language')?.value || 'Python';
+    const langInfo = languageMap[lang] || { ext: 'txt' };
+    const filename = `codemate_optimized.${langInfo.ext}`;
+    const blob = new Blob([code], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast(`Downloaded ${filename}`);
+  });
 }
+

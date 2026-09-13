@@ -202,3 +202,157 @@
   flex: 1;
 }
 
+/* ========================================================
+   CodeMate Tab 02: Code Health & Security Audit Styles
+   ======================================================== */
+.audit-metrics-bar {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-top: 22px;
+}
+.audit-metric-box {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 108px;
+}
+.metric-mini-label {
+  font: 600 9px var(--mono);
+  letter-spacing: .08em;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.score-display {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+.score-number {
+  font-size: 32px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--ink);
+}
+.score-total {
+  font-size: 13px;
+  font-family: var(--mono);
+  color: var(--muted);
+}
+.health-badge {
+  font: 700 9px var(--mono);
+  letter-spacing: .08em;
+  padding: 4px 8px;
+  border-radius: 3px;
+  width: fit-content;
+  margin-top: 6px;
+  text-transform: uppercase;
+}
+.health-excellent {
+  background: #dcfce7;
+  color: #15803d;
+}
+.health-good {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+.health-fair {
+  background: #fef3c7;
+  color: #b45309;
+}
+.health-poor {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+.complexity-pills {
+  display: flex;
+  gap: 14px;
+  margin-top: 4px;
+}
+.pill-group {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.pill-title {
+  font: 500 9px var(--mono);
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.complexity-pill {
+  font: 700 13px var(--mono);
+  padding: 5px 10px;
+  border-radius: 4px;
+  background: #18201d;
+  display: inline-block;
+  letter-spacing: .02em;
+}
+.pill-time {
+  color: #38bdf8;
+}
+.pill-space {
+  color: #f3c969;
+}
+.security-indicator {
+  display: flex;
+  align-items: center;
+  margin-top: 2px;
+}
+.security-status-badge {
+  font: 700 11px var(--mono);
+  padding: 5px 12px;
+  border-radius: 3px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  display: inline-block;
+}
+.status-safe {
+  background: #dcfce7;
+  color: #15803d;
+}
+.status-warning {
+  background: #fef3c7;
+  color: #b45309;
+}
+.status-vulnerable {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+.audit-metric-box small {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+  margin-top: 6px;
+  line-height: 1.3;
+}
+.audit-findings-list {
+  margin: 10px 0 0;
+  padding-left: 20px;
+  line-height: 1.65;
+  color: var(--ink);
+}
+.audit-findings-list li {
+  margin-bottom: 6px;
+}
+.tips-list li {
+  color: var(--teal);
+  font-weight: 500;
+}
+.code-tab-title {
+  font: 600 11px var(--mono);
+  color: #cbd5e1;
+  padding: 6px 12px;
+  display: inline-block;
+}
+
+@media(max-width: 850px) {
+  .audit-metrics-bar {
+    grid-template-columns: 1fr;
+  }
+}
+
+

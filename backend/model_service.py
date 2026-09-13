@@ -5,9 +5,10 @@ import re
 import time
 import urllib.error
 import urllib.request
+from typing import Any
 
-from backend.prompt_service import build_prompt
-from backend.response_parser import compute_severity, parse_response
+from backend.prompt_service import build_audit_prompt, build_prompt
+from backend.response_parser import compute_health_badge, compute_severity, parse_audit_response, parse_response
 
 logger = logging.getLogger(__name__)
 
@@ -18,6 +19,9 @@ class ModelError(RuntimeError):
 
 class ModelProvider:
     def analyze(self, language: str, code: str, error_message: str = "") -> dict[str, str]:
+        raise NotImplementedError
+
+    def audit(self, language: str, code: str) -> dict[str, Any]:
         raise NotImplementedError
 
 
@@ -62,6 +66,39 @@ class OllamaModelProvider(ModelProvider):
         except Exception as exc:
             raise ModelError(f"Ollama request failed: {exc}") from exc
 
+    def audit(self, language: str, code: str) -> dict[str, Any]:
+        prompt = build_audit_prompt(language, code)
+        payload = {
+            "model": self.model_name,
+            "messages": [
+                {"role": "system", "content": "You are CodeMate Audit Engine. Return ONLY a valid JSON object matching the requested schema. No conversational preamble or markdown fences."},
+                {"role": "user", "content": prompt}
+            ],
+            "stream": False,
+            "format": "json",
+            "options": {
+                "temperature": 0.2
+            }
+        }
+        url = f"{self.base_url}/api/chat"
+        req = urllib.request.Request(
+            url,
+            data=json.dumps(payload).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+            method="POST"
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=self.timeout) as resp:
+                body = json.loads(resp.read().decode("utf-8"))
+            content = body.get("message", {}).get("content", "")
+            return parse_audit_response(content)
+        except urllib.error.URLError as exc:
+            raise ModelError(
+                f"Cannot connect to Ollama at {self.base_url}. Please ensure Ollama is running (`ollama serve` or app running). Details: {exc}"
+            ) from exc
+        except Exception as exc:
+            raise ModelError(f"Ollama audit request failed: {exc}") from exc
+
 
 class APIModelProvider(ModelProvider):
     def __init__(self, api_key: str, model_name: str, base_url: str, timeout: int = 60):
@@ -87,6 +124,30 @@ class APIModelProvider(ModelProvider):
             return parse_response(body["choices"][0]["message"]["content"])
         except (urllib.error.URLError, KeyError, IndexError, json.JSONDecodeError) as exc:
             raise ModelError(f"The model provider could not complete the request: {exc}") from exc
+
+    def audit(self, language: str, code: str) -> dict[str, Any]:
+        if not self.api_key:
+            raise ModelError("API provider is selected, but API_KEY is not configured.")
+        payload = {
+            "model": self.model_name,
+            "temperature": 0.1,
+            "messages": [
+                {"role": "system", "content": "You are CodeMate Audit Engine. Return only the JSON requested by the user."},
+                {"role": "user", "content": build_audit_prompt(language, code)},
+            ]
+        }
+        request = urllib.request.Request(
+            f"{self.base_url}/chat/completions",
+            data=json.dumps(payload).encode("utf-8"),
+            headers={"Authorization": f"Bearer {self.api_key}", "Content-Type": "application/json"},
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(request, timeout=self.timeout) as response:
+                body = json.loads(response.read().decode("utf-8"))
+            return parse_audit_response(body["choices"][0]["message"]["content"])
+        except (urllib.error.URLError, KeyError, IndexError, json.JSONDecodeError) as exc:
+            raise ModelError(f"The model provider could not complete the audit request: {exc}") from exc
 
 
 class LocalModelProvider(ModelProvider):
@@ -179,6 +240,82 @@ class DemoModelProvider(ModelProvider):
             result["detected_issue"] += f" Supplied error: {error_message[:300]}"
         return result
 
+    def audit(self, language: str, code: str) -> dict[str, Any]:
+        lines = code.splitlines()
+        time_comp = "O(1)"
+        space_comp = "O(1)"
+        expl = "Constant time and auxiliary space execution."
+
+        loops = [l for l in lines if re.search(r"\b(for|while)\b", l)]
+        if len(loops) >= 2 and any("for " in l for l in loops):
+            time_comp = "O(N^2)"
+            expl = "Nested iteration over collection inputs leads to quadratic time complexity."
+        elif len(loops) == 1:
+            time_comp = "O(N)"
+            expl = "Single linear traversal through the data sequence."
+
+        if any(term in code for term in (".append(", ".push(", "new int[", "new ArrayList", "malloc(")):
+            if time_comp == "O(N^2)":
+                space_comp = "O(N^2)"
+            elif time_comp == "O(N)":
+                space_comp = "O(N)"
+
+        sec_findings = []
+        sec_status = "Safe"
+        if any(danger in code for danger in ("eval(", "exec(", "os.system(", "subprocess.Popen")):
+            sec_findings.append("Unsafe dynamic code execution detected (eval/exec/os.system).")
+            sec_status = "Vulnerable"
+        if re.search(r"(?:password|secret|api[_-]?key|token)\s*=\s*['\"][^'\"]+['\"]", code, re.I):
+            sec_findings.append("Hardcoded credential or secret key token detected in source.")
+            sec_status = "Vulnerable"
+        if re.search(r"SELECT\s+.*(?:%s|\+|f['\"])", code, re.I):
+            sec_findings.append("Potential SQL injection via raw string concatenation. Use parameterized queries.")
+            sec_status = "Vulnerable"
+
+        smells = []
+        if any(re.search(r"\b[a-z]\s*=", l) for l in lines):
+            smells.append("Cryptic single-letter variable names used.")
+        if "except:" in code or "except Exception:" in code:
+            smells.append("Broad exception clause catches unexpected errors blindly.")
+        if len(lines) > 25:
+            smells.append("Function length exceeds recommended 25-line limit.")
+        if not smells:
+            smells.append("Code structure is clean and concise.")
+
+        tips = []
+        if time_comp == "O(N^2)":
+            tips.append("Reduce quadratic complexity by using hash sets/maps for O(1) average lookups.")
+            tips.append("Preallocate collections or use generator expressions where possible.")
+        elif time_comp == "O(N)":
+            tips.append("Maintain linear efficiency; ensure early termination (break/return) when target is found.")
+        else:
+            tips.append("Algorithm is already operating at peak constant O(1) efficiency.")
+
+        score = 92
+        if time_comp == "O(N^2)":
+            score -= 15
+        if sec_status == "Vulnerable":
+            score -= 35
+        if len(smells) > 1:
+            score -= 8
+        score = max(25, min(100, score))
+
+        badge = compute_health_badge(score)
+
+        return {
+            "health_score": score,
+            "health_label": badge["label"],
+            "health_class": badge["class"],
+            "time_complexity": time_comp,
+            "space_complexity": space_comp,
+            "complexity_explanation": expl,
+            "security_status": sec_status,
+            "security_findings": sec_findings,
+            "code_smells": smells,
+            "optimization_tips": tips,
+            "optimized_code": code
+        }
+
 
 def create_provider(config) -> ModelProvider:
     get = config.get if hasattr(config, "get") else lambda key: getattr(config, key)
@@ -203,4 +340,13 @@ def analyze_with_provider(provider: ModelProvider, language: str, code: str, err
         result["severity_class"] = sev["class"]
     latency = round(time.perf_counter() - started, 3)
     logger.info("Model response received latency=%ss", latency)
+    return result, latency
+
+
+def audit_with_provider(provider: ModelProvider, language: str, code: str) -> tuple[dict[str, Any], float]:
+    started = time.perf_counter()
+    logger.info("Audit request started provider=%s", provider.__class__.__name__)
+    result = provider.audit(language, code)
+    latency = round(time.perf_counter() - started, 3)
+    logger.info("Audit response received latency=%ss", latency)
     return result, latency

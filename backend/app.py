@@ -5,7 +5,7 @@ import re
 from flask import Flask, jsonify, render_template, request
 
 from backend.config import Config
-from backend.model_service import ModelError, analyze_with_provider, create_provider
+from backend.model_service import ModelError, analyze_with_provider, audit_with_provider, create_provider
 
 
 def print_console_report(language: str, code: str, error_message: str, result: dict, latency: float, mode: str):
@@ -43,6 +43,49 @@ def print_console_report(language: str, code: str, error_message: str, result: d
     print(divider + "\n", flush=True)
 
 
+def print_console_audit_report(language: str, code: str, result: dict, latency: float, mode: str):
+    divider = "=" * 65
+    subdivider = "-" * 65
+    print("\n" + divider)
+    print("               CODEMATE HEALTH & SECURITY AUDIT")
+    print(divider)
+    print(f" Mode            : {mode.upper()}")
+    print(f" Language        : {language}")
+    print(f" Latency         : {latency}s")
+    print(f" Health Score    : {result.get('health_score', 'N/A')}/100 ({result.get('health_label', 'N/A')})")
+    print(f" Time Complexity : {result.get('time_complexity', 'N/A')}")
+    print(f" Space Complexity: {result.get('space_complexity', 'N/A')}")
+    print(f" Security Status : {result.get('security_status', 'N/A')}")
+    print(subdivider)
+    print(" [COMPLEXITY RATIONALE]:")
+    print(f" {result.get('complexity_explanation', 'N/A')}")
+    print(subdivider)
+    print(" [SECURITY FINDINGS]:")
+    findings = result.get("security_findings", [])
+    if findings:
+        for f in findings:
+            print(f"  • {f}")
+    else:
+        print("  • No security vulnerabilities detected.")
+    print(subdivider)
+    print(" [CODE SMELLS & QUALITY]:")
+    smells = result.get("code_smells", [])
+    if smells:
+        for s in smells:
+            print(f"  • {s}")
+    else:
+        print("  • Clean and well-structured code.")
+    print(subdivider)
+    print(" [OPTIMIZATION RECOMMENDATIONS]:")
+    tips = result.get("optimization_tips", [])
+    if tips:
+        for t in tips:
+            print(f"  • {t}")
+    else:
+        print("  • No performance bottlenecks identified.")
+    print(divider + "\n", flush=True)
+
+
 def create_app(config_class=Config):
     base_dir = Path(__file__).resolve().parent.parent
     template_dir = base_dir / "frontend" / "templates"
@@ -60,6 +103,10 @@ def create_app(config_class=Config):
     @app.get("/")
     def index():
         return render_template("index.html", mode=app.config["MODEL_PROVIDER"])
+
+    @app.get("/audit")
+    def audit():
+        return render_template("audit.html", mode=app.config["MODEL_PROVIDER"])
 
     @app.get("/about")
     def about():
@@ -95,6 +142,34 @@ def create_app(config_class=Config):
             return jsonify({"error": f"Analysis unexpected error: {exc}", "mode": app.config["MODEL_PROVIDER"]}), 500
 
         print_console_report(language, code, error_message, result, latency, app.config["MODEL_PROVIDER"])
+
+        return jsonify({
+            "result": result,
+            "latency": latency,
+            "mode": app.config["MODEL_PROVIDER"]
+        })
+
+    @app.post("/api/audit")
+    def api_audit():
+        payload = request.get_json(silent=True) or request.form
+        code = str(payload.get("code", ""))
+        language = str(payload.get("language", "Python"))[:40]
+
+        if not code.strip():
+            return jsonify({"error": "Please enter code before running audit."}), 400
+        if len(code) > app.config["MAX_CODE_LENGTH"]:
+            return jsonify({"error": f"Code is too large. Limit is {app.config['MAX_CODE_LENGTH']} characters."}), 413
+        if not re.match(r"^[A-Za-z0-9+#/ -]+$", language):
+            return jsonify({"error": "Unsupported language value."}), 400
+
+        try:
+            result, latency = audit_with_provider(provider, language, code)
+        except ModelError as exc:
+            return jsonify({"error": str(exc), "mode": app.config["MODEL_PROVIDER"]}), 503
+        except Exception as exc:
+            return jsonify({"error": f"Audit unexpected error: {exc}", "mode": app.config["MODEL_PROVIDER"]}), 500
+
+        print_console_audit_report(language, code, result, latency, app.config["MODEL_PROVIDER"])
 
         return jsonify({
             "result": result,
